@@ -1,0 +1,326 @@
+{
+  "_demo": false,
+  "generated_at": "2026-08-19T05:15:44.224699+00:00",
+  "domains": {
+    "telco": {
+      "domain": "Telco (Subscription/SaaS proxy)",
+      "n_customers": 7043,
+      "churn_rate": 0.2654,
+      "model_auc": {
+        "logistic_regression": 0.8465,
+        "random_forest": 0.83
+      },
+      "top_drivers": [
+        {
+          "feature": "TotalCharges",
+          "importance": 0.1703
+        },
+        {
+          "feature": "tenure",
+          "importance": 0.1598
+        },
+        {
+          "feature": "MonthlyCharges",
+          "importance": 0.1416
+        },
+        {
+          "feature": "Contract_Two year",
+          "importance": 0.0558
+        },
+        {
+          "feature": "InternetService_Fiber optic",
+          "importance": 0.0434
+        },
+        {
+          "feature": "ServiceCount",
+          "importance": 0.0397
+        },
+        {
+          "feature": "PaymentMethod_Electronic check",
+          "importance": 0.0359
+        },
+        {
+          "feature": "Contract_One year",
+          "importance": 0.0289
+        }
+      ],
+      "segments": [
+        {
+          "segment": 1,
+          "count": 1941,
+          "churn_rate": 0.1515,
+          "avg_tenure": 59.34,
+          "avg_service_count": 5.8,
+          "avg_monthly_charges": 92.86,
+          "avg_total_charges": 5499.54
+        },
+        {
+          "segment": 2,
+          "count": 1080,
+          "churn_rate": 0.0546,
+          "avg_tenure": 53.89,
+          "avg_service_count": 1.91,
+          "avg_monthly_charges": 32.93,
+          "avg_total_charges": 1751.69
+        },
+        {
+          "segment": 3,
+          "count": 2218,
+          "churn_rate": 0.4468,
+          "avg_tenure": 16.99,
+          "avg_service_count": 3.63,
+          "avg_monthly_charges": 79.95,
+          "avg_total_charges": 1341.62
+        },
+        {
+          "segment": 0,
+          "count": 1804,
+          "churn_rate": 0.291,
+          "avg_tenure": 9.39,
+          "avg_service_count": 1.29,
+          "avg_monthly_charges": 34.9,
+          "avg_total_charges": 284.93
+        }
+      ],
+      "priority_matrix": {
+        "MONITOR: no action needed yet": 4220,
+        "REWARD: early access / loyalty perks (already staying)": 1863,
+        "DO NOT INVEST: low value, unlikely to be saved profitably": 616,
+        "PRIORITIZE: proactive retention offer": 344
+      },
+      "clv_summary": {
+        "mean": 1394.08,
+        "median": 1340.4,
+        "total": 9818512.13
+      }
+    },
+    "netflix": {
+      "domain": "Streaming (Netflix-style, synthetic)",
+      "n_customers": 5000,
+      "churn_rate": 0.503,
+      "model_auc": {
+        "logistic_regression": 0.9614,
+        "random_forest": 0.9978
+      },
+      "top_drivers": [
+        {
+          "feature": "watch_hours",
+          "importance": 0.3809
+        },
+        {
+          "feature": "last_login_days",
+          "importance": 0.2995
+        },
+        {
+          "feature": "number_of_profiles",
+          "importance": 0.0655
+        },
+        {
+          "feature": "age",
+          "importance": 0.0474
+        },
+        {
+          "feature": "monthly_fee",
+          "importance": 0.026
+        },
+        {
+          "feature": "payment_method_Crypto",
+          "importance": 0.0176
+        },
+        {
+          "feature": "payment_method_Gift Card",
+          "importance": 0.0153
+        },
+        {
+          "feature": "subscription_type_Premium",
+          "importance": 0.0095
+        }
+      ],
+      "segments": [
+        {
+          "segment": 0,
+          "count": 1532,
+          "churn_rate": 0.2363,
+          "avg_recency_days": 14.89,
+          "avg_frequency": 8.38,
+          "avg_monetary": 16.08
+        },
+        {
+          "segment": 2,
+          "count": 1474,
+          "churn_rate": 0.7639,
+          "avg_recency_days": 45.78,
+          "avg_frequency": 9.01,
+          "avg_monetary": 16.03
+        },
+        {
+          "segment": 3,
+          "count": 462,
+          "churn_rate": 0.0087,
+          "avg_recency_days": 30.25,
+          "avg_frequency": 39.97,
+          "avg_monetary": 13.81
+        },
+        {
+          "segment": 1,
+          "count": 1532,
+          "churn_rate": 0.6678,
+          "avg_recency_days": 30.15,
+          "avg_frequency": 8.91,
+          "avg_monetary": 8.99
+        }
+      ],
+      "priority_matrix": {
+        "MONITOR: no action needed yet": 1701,
+        "DO NOT INVEST: low value, unlikely to be saved profitably": 1658,
+        "REWARD: early access / loyalty perks (already staying)": 1580,
+        "PRIORITIZE: proactive retention offer": 61
+      },
+      "clv_summary": {
+        "mean": 256.58,
+        "median": 221.79,
+        "total": 1282881.29
+      },
+      "churn_by_plan": {
+        "Basic": 0.6183,
+        "Premium": 0.4371,
+        "Standard": 0.4544
+      }
+    },
+    "retail": {
+      "domain": "Ecommerce/Marketplace (Amazon/Shopify-style, real transactions)",
+      "n_customers": 4338,
+      "churn_rate": 0.334,
+      "model_auc": {
+        "logistic_regression": 0.9114,
+        "random_forest": 0.9438
+      },
+      "top_drivers": [
+        {
+          "feature": "TenureDays",
+          "importance": 0.3929
+        },
+        {
+          "feature": "Monetary",
+          "importance": 0.1757
+        },
+        {
+          "feature": "Frequency",
+          "importance": 0.1666
+        },
+        {
+          "feature": "ProductDiversity",
+          "importance": 0.1403
+        },
+        {
+          "feature": "AvgOrderValue",
+          "importance": 0.11
+        },
+        {
+          "feature": "Country_United Kingdom",
+          "importance": 0.004
+        },
+        {
+          "feature": "Country_Other",
+          "importance": 0.0034
+        },
+        {
+          "feature": "Country_Germany",
+          "importance": 0.0019
+        }
+      ],
+      "segments": [
+        {
+          "segment": 2,
+          "count": 13,
+          "churn_rate": 0.0,
+          "avg_recency_days": 7.38,
+          "avg_frequency": 82.54,
+          "avg_monetary": 127338.31
+        },
+        {
+          "segment": 3,
+          "count": 204,
+          "churn_rate": 0.0196,
+          "avg_recency_days": 15.5,
+          "avg_frequency": 22.33,
+          "avg_monetary": 12709.09
+        },
+        {
+          "segment": 0,
+          "count": 3054,
+          "churn_rate": 0.1238,
+          "avg_recency_days": 43.7,
+          "avg_frequency": 3.68,
+          "avg_monetary": 1359.05
+        },
+        {
+          "segment": 1,
+          "count": 1067,
+          "churn_rate": 1.0,
+          "avg_recency_days": 248.08,
+          "avg_frequency": 1.55,
+          "avg_monetary": 480.62
+        }
+      ],
+      "priority_matrix": {
+        "MONITOR: no action needed yet": 2081,
+        "DO NOT INVEST: low value, unlikely to be saved profitably": 1108,
+        "REWARD: early access / loyalty perks (already staying)": 1105,
+        "PRIORITIZE: proactive retention offer": 44
+      },
+      "clv_summary": {
+        "mean": 6523.61,
+        "median": 2847.36,
+        "total": 28299427.0
+      },
+      "churn_definition": "No purchase in 90+ days (inferred, not a real label)"
+    }
+  },
+  "domain_errors": {
+    "telco": null,
+    "netflix": null,
+    "retail": null
+  },
+  "uplift": {
+    "domain": "Cross-cutting: Uplift/Persuadability (email marketing, randomized)",
+    "n_customers_scored": 19200,
+    "overall_conversion_rate": 0.0094,
+    "targeting_overlap": {
+      "top_pct_compared": 0.2,
+      "n_customers_in_top_group": 3840,
+      "overlap_count": 2409,
+      "overlap_pct_of_top_group": 0.6273,
+      "actual_uplift_top_decile": 0.0019,
+      "actual_uplift_bottom_decile": 0.0061
+    },
+    "note": "Plain response models and uplift models select substantially different customers. This is the concrete evidence for the 'risk vs. persuadability' research gap: predicting who will act is not the same as predicting who an intervention will change."
+  },
+  "uplift_error": null,
+  "cross_domain_comparison": {
+    "churn_rate_by_domain": {
+      "Telco (Subscription/SaaS proxy)": 0.2654,
+      "Streaming (Netflix-style, synthetic)": 0.503,
+      "Ecommerce/Marketplace (Amazon/Shopify-style, real transactions)": 0.334
+    },
+    "auc_by_domain": {
+      "Telco (Subscription/SaaS proxy)": {
+        "logistic_regression": 0.8465,
+        "random_forest": 0.83
+      },
+      "Streaming (Netflix-style, synthetic)": {
+        "logistic_regression": 0.9614,
+        "random_forest": 0.9978
+      },
+      "Ecommerce/Marketplace (Amazon/Shopify-style, real transactions)": {
+        "logistic_regression": 0.9114,
+        "random_forest": 0.9438
+      }
+    },
+    "top_driver_by_domain": {
+      "Telco (Subscription/SaaS proxy)": "TotalCharges",
+      "Streaming (Netflix-style, synthetic)": "watch_hours",
+      "Ecommerce/Marketplace (Amazon/Shopify-style, real transactions)": "TenureDays"
+    }
+  }
+}

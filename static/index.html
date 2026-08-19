@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Customer Segmentation & Retention Analysis — Live Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1116;
+    --panel: #171a21;
+    --panel-border: #262b36;
+    --text: #e7e9ee;
+    --muted: #9aa3b2;
+    --accent: #5b8cff;
+    --green: #35c17d;
+    --amber: #f2a93b;
+    --red: #ef5b5b;
+    --gray: #5b6472;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  header {
+    padding: 20px 32px; border-bottom: 1px solid var(--panel-border);
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  }
+  header h1 { margin: 0 0 4px; font-size: 20px; font-weight: 600; }
+  header .sub { color: var(--muted); font-size: 13px; }
+  .controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .controls input[type="file"] {
+    color: var(--muted); font-size: 12px; max-width: 220px;
+  }
+  button.runBtn {
+    background: var(--accent); color: #fff; border: none; border-radius: 8px;
+    padding: 10px 18px; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  button.runBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+  #statusMsg { font-size: 12px; color: var(--muted); }
+  #emptyState {
+    margin: 32px; padding: 32px; border: 1px dashed var(--panel-border); border-radius: 10px;
+    text-align: center; color: var(--muted); display: none;
+  }
+  nav {
+    display: flex; gap: 4px; padding: 12px 32px 0; flex-wrap: wrap;
+    border-bottom: 1px solid var(--panel-border);
+  }
+  nav button.tabBtn {
+    background: none; border: none; color: var(--muted);
+    padding: 10px 16px; font-size: 13px; cursor: pointer;
+    border-bottom: 2px solid transparent; font-weight: 500;
+  }
+  nav button.tabBtn.active { color: var(--text); border-bottom-color: var(--accent); }
+  main { padding: 24px 32px 48px; max-width: 1200px; margin: 0 auto; }
+  .tab { display: none; }
+  .tab.active { display: block; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--panel-border);
+    border-radius: 10px; padding: 16px 18px;
+  }
+  .card .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; }
+  .card .value { font-size: 24px; font-weight: 700; }
+  .card .footnote { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+  .panel h3 { margin: 0 0 12px; font-size: 15px; }
+  .panel p.note { color: var(--muted); font-size: 13px; line-height: 1.5; }
+  select {
+    background: var(--panel); color: var(--text); border: 1px solid var(--panel-border);
+    padding: 6px 10px; border-radius: 6px; font-size: 13px; margin-bottom: 16px;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--panel-border); }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; }
+  .chart-wrap { position: relative; height: 320px; }
+  .chart-wrap.tall { height: 380px; }
+  .error-note { color: var(--red); font-size: 13px; }
+  .spinner {
+    display: inline-block; width: 12px; height: 12px; border: 2px solid var(--muted);
+    border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite;
+    margin-right: 6px; vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Customer Segmentation & Retention Analysis</h1>
+    <div class="sub">Live dashboard &mdash; backed by a Flask API, not a static file</div>
+  </div>
+  <div class="controls">
+    <input type="file" id="netflixFileInput" accept=".csv" title="Optional: upload a Netflix churn CSV (Kaggle)">
+    <button class="runBtn" id="runBtn">Run Analysis</button>
+    <span id="statusMsg"></span>
+  </div>
+</header>
+
+<div id="emptyState">
+  No analysis has been run yet. Click <strong>Run Analysis</strong> above.<br>
+  <span style="font-size:12px;">First run downloads real datasets (Telco, UK retail transactions, Hillstrom email experiment) and trains models &mdash; can take 30&ndash;90 seconds.</span>
+</div>
+
+<nav id="mainNav">
+  <button class="tabBtn active" data-tab="overview">Overview</button>
+  <button class="tabBtn" data-tab="segments">Segments</button>
+  <button class="tabBtn" data-tab="drivers">Churn Drivers</button>
+  <button class="tabBtn" data-tab="matrix">Priority Matrix</button>
+  <button class="tabBtn" data-tab="crossdomain">Cross-Domain Comparison</button>
+  <button class="tabBtn" data-tab="uplift">Uplift / Persuadability</button>
+</nav>
+
+<main id="mainContent">
+
+  <!-- OVERVIEW -->
+  <section class="tab active" id="tab-overview">
+    <div class="cards" id="overviewCards"></div>
+    <div class="panel">
+      <h3>What this dashboard shows</h3>
+      <p class="note">
+        Three domains run through the identical RFM &rarr; churn model &rarr; CLV &rarr; priority-matrix pipeline
+        (subscription/SaaS, streaming, ecommerce/marketplace), plus a separate causal uplift analysis on a real
+        randomized email experiment. The Cross-Domain tab tests whether churn drivers generalize across business
+        types. The Uplift tab tests whether "at risk" and "persuadable" are actually the same customers.
+        The Netflix domain needs a Kaggle CSV uploaded via the file picker above (optional -- everything else runs without it).
+      </p>
+    </div>
+  </section>
+
+  <!-- SEGMENTS -->
+  <section class="tab" id="tab-segments">
+    <select id="segmentDomainSelect"></select>
+    <div class="panel">
+      <h3>Segment profile</h3>
+      <div class="chart-wrap"><canvas id="segmentChart"></canvas></div>
+    </div>
+    <div class="panel">
+      <h3>Segment detail</h3>
+      <table id="segmentTable"><thead></thead><tbody></tbody></table>
+    </div>
+  </section>
+
+  <!-- DRIVERS -->
+  <section class="tab" id="tab-drivers">
+    <select id="driverDomainSelect"></select>
+    <div class="panel">
+      <h3>Top churn drivers (model feature importance)</h3>
+      <div class="chart-wrap tall"><canvas id="driverChart"></canvas></div>
+    </div>
+  </section>
+
+  <!-- MATRIX -->
+  <section class="tab" id="tab-matrix">
+    <select id="matrixDomainSelect"></select>
+    <div class="panel">
+      <h3>CLV &times; Churn-Risk priority matrix</h3>
+      <div class="chart-wrap"><canvas id="matrixChart"></canvas></div>
+      <p class="note">PRIORITIZE = high value + at risk (retention budget goes here first). REWARD = high value + already staying (early-access/loyalty candidates). DO NOT INVEST = low value + at risk (not worth saving). MONITOR = everything else.</p>
+    </div>
+  </section>
+
+  <!-- CROSS DOMAIN -->
+  <section class="tab" id="tab-crossdomain">
+    <div class="panel">
+      <h3>Does the same framework generalize across business types?</h3>
+      <p class="note">Same pipeline, structurally different businesses. If the top driver and churn rate look similar everywhere, the "same three metrics matter everywhere" claim holds. If they diverge, segmentation needs to be domain-specific.</p>
+      <table id="crossDomainTable">
+        <thead><tr><th>Domain</th><th>Churn Rate</th><th>Top Driver</th><th>Model AUC (Random Forest)</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- UPLIFT -->
+  <section class="tab" id="tab-uplift">
+    <div class="cards" id="upliftCards"></div>
+    <div class="panel">
+      <h3>Actual causal effect: top uplift decile vs. bottom uplift decile</h3>
+      <div class="chart-wrap"><canvas id="upliftChart"></canvas></div>
+      <p class="note" id="upliftNote"></p>
+    </div>
+  </section>
+
+</main>
+
+<script>
+let DATA = null;
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+const PALETTE = ["#5b8cff", "#35c17d", "#f2a93b", "#ef5b5b", "#9b6bff", "#3bd1e0"];
+function fmtPct(x) { return (x * 100).toFixed(1) + "%"; }
+function fmtNum(x) { return Number(x).toLocaleString(undefined, {maximumFractionDigits: 1}); }
+function domainEntries() {
+  if (!DATA || !DATA.domains) return [];
+  return Object.entries(DATA.domains).filter(([k, v]) => v);
+}
+
+// ---------------------------------------------------------------------------
+// Tab switching
+// ---------------------------------------------------------------------------
+document.querySelectorAll(".tabBtn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tabBtn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Fetch + Run
+// ---------------------------------------------------------------------------
+async function loadData() {
+  try {
+    const res = await fetch("/api/dashboard-data");
+    if (!res.ok) {
+      showEmptyState(true);
+      return;
+    }
+    DATA = await res.json();
+    showEmptyState(false);
+    renderAll();
+  } catch (e) {
+    showEmptyState(true);
+  }
+}
+
+function showEmptyState(show) {
+  document.getElementById("emptyState").style.display = show ? "block" : "none";
+  document.getElementById("mainNav").style.display = show ? "none" : "flex";
+  document.getElementById("mainContent").style.display = show ? "none" : "block";
+}
+
+document.getElementById("runBtn").addEventListener("click", async () => {
+  const btn = document.getElementById("runBtn");
+  const status = document.getElementById("statusMsg");
+  btn.disabled = true;
+  status.innerHTML = '<span class="spinner"></span>Running analysis (this can take 30-90s)...';
+
+  try {
+    const fileInput = document.getElementById("netflixFileInput");
+    const formData = new FormData();
+    if (fileInput.files[0]) formData.append("netflix_csv", fileInput.files[0]);
+
+    const res = await fetch("/api/run", { method: "POST", body: formData });
+    DATA = await res.json();
+    showEmptyState(false);
+    renderAll();
+    status.textContent = "Done. Generated " + (DATA.generated_at || "");
+  } catch (e) {
+    status.textContent = "Failed: " + e.message;
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Render orchestration
+// ---------------------------------------------------------------------------
+function renderAll() {
+  renderOverview();
+  renderCrossDomain();
+  renderUplift();
+
+  const segSelect = document.getElementById("segmentDomainSelect");
+  populateDomainSelect(segSelect, renderSegments);
+  if (segSelect.options.length) renderSegments(segSelect.value);
+
+  const driverSelect = document.getElementById("driverDomainSelect");
+  populateDomainSelect(driverSelect, renderDrivers);
+  if (driverSelect.options.length) renderDrivers(driverSelect.value);
+
+  const matrixSelect = document.getElementById("matrixDomainSelect");
+  populateDomainSelect(matrixSelect, renderMatrix);
+  if (matrixSelect.options.length) renderMatrix(matrixSelect.value);
+}
+
+// ---------------------------------------------------------------------------
+// Overview
+// ---------------------------------------------------------------------------
+function renderOverview() {
+  const container = document.getElementById("overviewCards");
+  container.innerHTML = "";
+
+  domainEntries().forEach(([key, d]) => {
+    const topDriver = d.top_drivers && d.top_drivers[0] ? d.top_drivers[0].feature : "n/a";
+    const clv = d.clv_summary ? `$${fmtNum(d.clv_summary.mean)}` : "n/a";
+    container.innerHTML += `
+      <div class="card">
+        <div class="label">${d.domain}</div>
+        <div class="value">${fmtPct(d.churn_rate)}</div>
+        <div class="footnote">churn rate &middot; ${fmtNum(d.n_customers)} customers &middot; top driver: ${topDriver} &middot; avg CLV: ${clv}</div>
+      </div>`;
+  });
+
+  if (DATA.uplift) {
+    const ov = DATA.uplift.targeting_overlap;
+    container.innerHTML += `
+      <div class="card">
+        <div class="label">Uplift vs. Plain Targeting Overlap</div>
+        <div class="value">${fmtPct(ov.overlap_pct_of_top_group)}</div>
+        <div class="footnote">of customers a plain response model would target are also flagged by the uplift model</div>
+      </div>`;
+  }
+
+  Object.entries(DATA.domain_errors || {}).forEach(([key, err]) => {
+    if (err) {
+      container.innerHTML += `<div class="card"><div class="label">${key}</div><div class="error-note">${err}</div></div>`;
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Segments tab
+// ---------------------------------------------------------------------------
+let segmentChartInstance = null;
+function populateDomainSelect(selectEl, onChange) {
+  selectEl.innerHTML = "";
+  domainEntries().forEach(([key, d]) => {
+    const opt = document.createElement("option");
+    opt.value = key;
+    opt.textContent = d.domain;
+    selectEl.appendChild(opt);
+  });
+  selectEl.onchange = () => onChange(selectEl.value);
+}
+
+function renderSegments(domainKey) {
+  const d = DATA.domains[domainKey];
+  if (!d) return;
+  const labels = d.segments.map(s => "Segment " + s.segment);
+  const churnRates = d.segments.map(s => s.churn_rate * 100);
+  const counts = d.segments.map(s => s.count);
+
+  if (segmentChartInstance) segmentChartInstance.destroy();
+  segmentChartInstance = new Chart(document.getElementById("segmentChart"), {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        { label: "Churn rate (%)", data: churnRates, backgroundColor: "#ef5b5b", yAxisID: "y" },
+        { label: "Customer count", data: counts, backgroundColor: "#5b8cff", yAxisID: "y1" }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        y: { position: "left", title: { display: true, text: "Churn rate (%)", color: "#9aa3b2" }, ticks: { color: "#9aa3b2" }, grid: { color: "#262b36" } },
+        y1: { position: "right", title: { display: true, text: "Customers", color: "#9aa3b2" }, ticks: { color: "#9aa3b2" }, grid: { display: false } },
+        x: { ticks: { color: "#9aa3b2" }, grid: { display: false } }
+      },
+      plugins: { legend: { labels: { color: "#e7e9ee" } } }
+    }
+  });
+
+  const cols = Object.keys(d.segments[0]).filter(c => c !== "segment");
+  const table = document.getElementById("segmentTable");
+  table.querySelector("thead").innerHTML = "<tr><th>Segment</th>" + cols.map(c => `<th>${c}</th>`).join("") + "</tr>";
+  table.querySelector("tbody").innerHTML = d.segments.map(s =>
+    "<tr><td>" + s.segment + "</td>" + cols.map(c => `<td>${typeof s[c] === "number" ? fmtNum(s[c]) : s[c]}</td>`).join("") + "</tr>"
+  ).join("");
+}
+
+// ---------------------------------------------------------------------------
+// Drivers tab
+// ---------------------------------------------------------------------------
+let driverChartInstance = null;
+function renderDrivers(domainKey) {
+  const d = DATA.domains[domainKey];
+  if (!d) return;
+  const labels = d.top_drivers.map(x => x.feature);
+  const values = d.top_drivers.map(x => x.importance);
+
+  if (driverChartInstance) driverChartInstance.destroy();
+  driverChartInstance = new Chart(document.getElementById("driverChart"), {
+    type: "bar",
+    data: { labels, datasets: [{ label: "Feature importance", data: values, backgroundColor: PALETTE[0] }] },
+    options: {
+      indexAxis: "y", responsive: true, maintainAspectRatio: false,
+      scales: {
+        x: { ticks: { color: "#9aa3b2" }, grid: { color: "#262b36" } },
+        y: { ticks: { color: "#9aa3b2" }, grid: { display: false } }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Priority matrix tab
+// ---------------------------------------------------------------------------
+let matrixChartInstance = null;
+function renderMatrix(domainKey) {
+  const d = DATA.domains[domainKey];
+  if (!d) return;
+  const labels = Object.keys(d.priority_matrix);
+  const values = Object.values(d.priority_matrix);
+  const colorMap = {
+    "PRIORITIZE: proactive retention offer": "#ef5b5b",
+    "REWARD: early access / loyalty perks (already staying)": "#35c17d",
+    "DO NOT INVEST: low value, unlikely to be saved profitably": "#5b6472",
+    "MONITOR: no action needed yet": "#5b8cff"
+  };
+  const colors = labels.map(l => colorMap[l] || PALETTE[0]);
+
+  if (matrixChartInstance) matrixChartInstance.destroy();
+  matrixChartInstance = new Chart(document.getElementById("matrixChart"), {
+    type: "doughnut",
+    data: { labels, datasets: [{ data: values, backgroundColor: colors }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: "bottom", labels: { color: "#e7e9ee", boxWidth: 14, font: { size: 11 } } } }
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Cross-domain tab
+// ---------------------------------------------------------------------------
+function renderCrossDomain() {
+  const c = DATA.cross_domain_comparison || {};
+  const tbody = document.querySelector("#crossDomainTable tbody");
+  tbody.innerHTML = "";
+  Object.keys(c.churn_rate_by_domain || {}).forEach(domain => {
+    const auc = (c.auc_by_domain[domain] || {}).random_forest;
+    tbody.innerHTML += `<tr>
+      <td>${domain}</td>
+      <td>${fmtPct(c.churn_rate_by_domain[domain])}</td>
+      <td>${c.top_driver_by_domain[domain] || "n/a"}</td>
+      <td>${auc !== undefined ? auc.toFixed(3) : "n/a"}</td>
+    </tr>`;
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Uplift tab
+// ---------------------------------------------------------------------------
+let upliftChartInstance = null;
+function renderUplift() {
+  const u = DATA.uplift;
+  const container = document.getElementById("upliftCards");
+  container.innerHTML = "";
+  if (!u) {
+    container.innerHTML = `<div class="card"><div class="error-note">${DATA.uplift_error || "No uplift data available."}</div></div>`;
+    return;
+  }
+  const ov = u.targeting_overlap;
+  container.innerHTML = `
+    <div class="card">
+      <div class="label">Customers scored</div>
+      <div class="value">${fmtNum(u.n_customers_scored)}</div>
+    </div>
+    <div class="card">
+      <div class="label">Overall conversion rate</div>
+      <div class="value">${fmtPct(u.overall_conversion_rate)}</div>
+    </div>
+    <div class="card">
+      <div class="label">Targeting overlap (top ${Math.round(ov.top_pct_compared*100)}%)</div>
+      <div class="value">${fmtPct(ov.overlap_pct_of_top_group)}</div>
+      <div class="footnote">plain response model vs. uplift model</div>
+    </div>`;
+
+  if (upliftChartInstance) upliftChartInstance.destroy();
+  upliftChartInstance = new Chart(document.getElementById("upliftChart"), {
+    type: "bar",
+    data: {
+      labels: ["Top uplift decile", "Bottom uplift decile"],
+      datasets: [{
+        label: "Actual conversion lift from email (treated - control, percentage points)",
+        data: [ov.actual_uplift_top_decile * 100, ov.actual_uplift_bottom_decile * 100],
+        backgroundColor: [PALETTE[1], PALETTE[3]]
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        y: { ticks: { color: "#9aa3b2" }, grid: { color: "#262b36" } },
+        x: { ticks: { color: "#9aa3b2" }, grid: { display: false } }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+
+  document.getElementById("upliftNote").textContent = u.note || "";
+}
+
+// ---------------------------------------------------------------------------
+// Init
+// ---------------------------------------------------------------------------
+loadData();
+</script>
+
+</body>
+</html>
